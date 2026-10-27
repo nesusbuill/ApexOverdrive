@@ -44,41 +44,43 @@ object ShellExecutor {
             else Result("ERROR: Root required", -1)
         } else execute(cmd, timeoutSec)
 
-    private suspend fun runProc(argv: Array<String>, timeoutSec: Int): Result = try {
-        val m = Shizuku::class.java.getDeclaredMethod(
-            "newProcess",
-            Array<String>::class.java, Array<String>::class.java, String::class.java
-        )
-        m.isAccessible = true
-        @Suppress("DEPRECATION")
-        val p = m.invoke(null, argv, null, null) as ShizukuRemoteProcess
-        val out = StringBuilder()
-        val err = StringBuilder()
-        val t1 = Thread {
-            try { p.inputStream.bufferedReader().forEachLine { out.appendLine(it) } } catch (_: Throwable) {}
-        }
-        val t2 = Thread {
-            try { p.errorStream.bufferedReader().forEachLine { err.appendLine(it) } } catch (_: Throwable) {}
-        }
-        t1.start(); t2.start()
-        val exited = p.waitFor(timeoutSec.toLong(), TimeUnit.SECONDS)
-        if (!exited) {
-            try { p.destroy() } catch (_: Throwable) {}
-            return Result("TIMEOUT after ${timeoutSec}s", -1)
-        }
-        t1.join(2000); t2.join(2000)
-        val code = p.exitValue()
-        try { p.destroy() } catch (_: Throwable) {}
-        val body = buildString {
-            if (out.isNotBlank()) append(out.toString().trim())
-            if (err.isNotBlank()) {
-                if (isNotEmpty()) append("\n")
-                append("WARN: ").append(err.toString().trim())
+    private suspend fun runProc(argv: Array<String>, timeoutSec: Int): Result {
+        return try {
+            val m = Shizuku::class.java.getDeclaredMethod(
+                "newProcess",
+                Array<String>::class.java, Array<String>::class.java, String::class.java
+            )
+            m.isAccessible = true
+            @Suppress("DEPRECATION")
+            val p = m.invoke(null, argv, null, null) as ShizukuRemoteProcess
+            val out = StringBuilder()
+            val err = StringBuilder()
+            val t1 = Thread {
+                try { p.inputStream.bufferedReader().forEachLine { out.appendLine(it) } } catch (_: Throwable) {}
             }
-            if (isEmpty()) append("OK")
+            val t2 = Thread {
+                try { p.errorStream.bufferedReader().forEachLine { err.appendLine(it) } } catch (_: Throwable) {}
+            }
+            t1.start(); t2.start()
+            val exited = p.waitFor(timeoutSec.toLong(), TimeUnit.SECONDS)
+            if (!exited) {
+                try { p.destroy() } catch (_: Throwable) {}
+                return Result("TIMEOUT after ${timeoutSec}s", -1)
+            }
+            t1.join(2000); t2.join(2000)
+            val code = p.exitValue()
+            try { p.destroy() } catch (_: Throwable) {}
+            val body = buildString {
+                if (out.isNotBlank()) append(out.toString().trim())
+                if (err.isNotBlank()) {
+                    if (isNotEmpty()) append("\n")
+                    append("WARN: ").append(err.toString().trim())
+                }
+                if (isEmpty()) append("OK")
+            }
+            Result(body, code)
+        } catch (e: Throwable) {
+            Result("ERROR: ${e.message}", -1)
         }
-        Result(body, code)
-    } catch (e: Throwable) {
-        Result("ERROR: ${e.message}", -1)
     }
 }
