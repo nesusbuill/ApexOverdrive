@@ -2,33 +2,24 @@ plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
 }
-
 android {
     namespace 'com.apex.overdrive'
     compileSdk 34
-
     defaultConfig {
         applicationId "com.apex.overdrive"
-        minSdk 26
-        targetSdk 34
-        versionCode 6
-        versionName "6.0.0"
+        minSdk 26; targetSdk 34
+        versionCode 7; versionName "7.0.0"
         ndk { abiFilters 'arm64-v8a', 'armeabi-v7a' }
         externalNativeBuild {
             cmake {
-                cppFlags '-O2 -fvisibility=hidden -fvisibility-inlines-hidden'
+                cppFlags '-O2 -fvisibility=hidden'
                 arguments '-DANDROID_STL=c++_static'
             }
         }
     }
-
     externalNativeBuild {
-        cmake {
-            path file('src/main/cpp/CMakeLists.txt')
-            version '3.22.1'
-        }
+        cmake { path file('src/main/cpp/CMakeLists.txt'); version '3.22.1' }
     }
-
     signingConfigs {
         release {
             if (file("../apex-release.jks").exists()) {
@@ -39,35 +30,23 @@ android {
             }
         }
     }
-
     buildTypes {
-        debug {
-            minifyEnabled false
-            debuggable true
-        }
+        debug { minifyEnabled false; debuggable true }
         release {
             signingConfig signingConfigs.release
             minifyEnabled true
             shrinkResources true
             debuggable false
-            jniDebuggable false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            ndk { debugSymbolLevel 'NONE' }
         }
     }
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
-    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = '17' }
-
     buildFeatures { 
         compose true 
-        buildConfig = true
+        buildConfig = true 
     }
     composeOptions { kotlinCompilerExtensionVersion '1.5.8' }
-
     applicationVariants.all { variant ->
         variant.outputs.all { output ->
             def suffix = (variant.buildType.name == "debug") ? "" : "-${variant.buildType.name}"
@@ -75,7 +54,6 @@ android {
         }
     }
 }
-
 dependencies {
     implementation 'androidx.core:core-ktx:1.12.0'
     implementation 'androidx.activity:activity-compose:1.8.2'
@@ -89,4 +67,5 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
     implementation 'dev.rikka.shizuku:api:13.1.5'
     implementation 'dev.rikka.shizuku:provider:13.1.5'
+    implementation 'androidx.compose.material:material-icons-extended'
 }
