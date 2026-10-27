@@ -16,12 +16,18 @@ object IntegrityCheck {
         } catch (_: Throwable) { "0000000000000000" }
 
     fun verify(context: Context): Result {
-        if (NativeBridge.isDebuggerAttached()) return Result(false, "Debugger detected")
-        if (NativeBridge.isFridaDetected()) return Result(false, "Frida detected")
+        // ⚠️ ĐÃ TẮT KIỂM TRA DEBUGGER VÀ FRIDA ĐỂ TRÁNH BẮT NHẦM TRÊN MÁY THẬT
+        // if (NativeBridge.isDebuggerAttached()) return Result(false, "Debugger detected")
+        // if (NativeBridge.isFridaDetected()) return Result(false, "Frida detected")
+        
+        // Chỉ kiểm tra xem APK có bị sửa (đổi Sign) hay không
         val sig = getSigHash(context) ?: return Result(false, "No signature")
         val expected = EXPECTED_SIG_HASH
+        
+        // Nếu là bản build từ GitHub, expected sẽ là "0000000000000000" (bỏ qua check)
         if (expected != "0000000000000000" && !NativeBridge.verifyIntegrity(sig))
             return Result(false, "APK signature mismatch")
+            
         return Result(true)
     }
 
@@ -34,7 +40,7 @@ object IntegrityCheck {
                     .signingInfo?.apkContentsSigners
             } else {
                 @Suppress("DEPRECATION")
-                pm.getPackageInfo(pkg, PackageManager.GET_SIGNATURES).signatures
+                pm.getPackageInfo(pkg, PackageManager.GET_SIGNING_CERTIFICATES).signatures
             }
             if (sigs.isNullOrEmpty()) return null
             val md = MessageDigest.getInstance("SHA-256")
