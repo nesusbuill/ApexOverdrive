@@ -3,6 +3,7 @@ package com.apex.overdrive.ui
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -10,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.unit.dp
 import kotlin.math.PI
 import kotlin.math.sin
@@ -185,7 +187,6 @@ fun GamingAvatar(sizeDp: Int = 72, accent: Color = C.Cyan) {
                     Offset(cx + irisR * 0.12f, cy + irisR * 0.15f)
                 )
 
-                // Flame particles
                 for (i in 0 until 9) {
                     val seed = i * 0.618f
                     val baseX = cx + (Random(seed.toInt() * 100).nextFloat() - 0.5f) * eyeW * 0.7f
