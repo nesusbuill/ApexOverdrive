@@ -2,6 +2,7 @@ plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
 }
+
 android {
     namespace 'com.apex.overdrive'
     compileSdk 34
@@ -30,15 +31,11 @@ android {
 
     signingConfigs {
         release {
-            def kp = System.getenv("APEX_KEYSTORE_PATH") ?: "apex-release.jks"
-            def kpw = System.getenv("APEX_KEYSTORE_PASSWORD") ?: ""
-            def ka = System.getenv("APEX_KEY_ALIAS") ?: "apex"
-            def kypw = System.getenv("APEX_KEY_PASSWORD") ?: ""
-            if (file(kp).exists()) {
-                storeFile file(kp)
-                storePassword kpw
-                keyAlias ka
-                keyPassword kypw
+            if (file("../apex-release.jks").exists()) {
+                storeFile file("../apex-release.jks")
+                storePassword "Apex123456"
+                keyAlias "apex"
+                keyPassword "Apex123456"
             }
         }
     }
@@ -65,7 +62,10 @@ android {
     }
     kotlinOptions { jvmTarget = '17' }
 
-    buildFeatures { compose true }
+    buildFeatures { 
+        compose true 
+        buildConfig = true
+    }
     composeOptions { kotlinCompilerExtensionVersion '1.5.8' }
 
     applicationVariants.all { variant ->
