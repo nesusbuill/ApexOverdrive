@@ -2,7 +2,6 @@ package com.apex.overdrive.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,85 +26,80 @@ import kotlinx.coroutines.launch
 fun TerminalScreen(szState: ShizukuManager.State, onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     var cmd by remember { mutableStateOf("") }
-    var history by remember { mutableStateOf(listOf<String>()) }
+    var outputLog by remember { mutableStateOf("Nhập lệnh và bấm RUN...\n") }
+    var isRunning by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
     val ready = szState == ShizukuManager.State.Ready
+
+    fun runCmd() {
+        if (cmd.isBlank() || !ready || isRunning) return
+        val commandToRun = cmd
+        cmd = ""
+        isRunning = true
+        outputLog += "\n$ $commandToRun\n"
+        
+        scope.launch {
+            val result = ShellExecutor.execute(commandToRun)
+            outputLog += "${result.output}\n"
+            isRunning = false
+        }
+    }
+
+    // Tự động cuộn xuống cuối khi có log mới
+    LaunchedEffect(outputLog) {
+        scrollState.animateScrollTo(scrollState.maxValue)
+    }
 
     Box(Modifier.fillMaxSize()) {
         AnimatedBackground(C.Cyan)
         Column(Modifier.fillMaxSize().padding(16.dp)) {
-            BackBar("TERMINAL", onBack)
+            BackBar("ADB TERMINAL", onBack)
             Spacer(Modifier.height(16.dp))
 
+            // Màn hình Log
             Box(Modifier.weight(1f).fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFF000000))
+                .background(Color.Black)
                 .border(1.dp, C.Border, RoundedCornerShape(12.dp))
-                .padding(12.dp).verticalScroll(rememberScrollState())) {
-                Column {
-                    if (history.isEmpty()) {
-                        Text("// ADB shell ready\n// Type command and press RUN",
-                            color = C.TextSecondary, fontSize = 11.sp,
-                            fontFamily = FontFamily.Monospace)
-                    } else {
-                        history.forEach { line ->
-                            Text(line,
-                                color = if (line.startsWith("$")) C.Lime else C.Cyan,
-                                fontSize = 11.sp, fontFamily = FontFamily.Monospace)
-                            Spacer(Modifier.height(4.dp))
-                        }
-                    }
+                .padding(12.dp)) {
+                Column(Modifier.verticalScroll(scrollState)) {
+                    Text(outputLog, color = C.Green, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
                 }
             }
             Spacer(Modifier.height(12.dp))
 
+            // Thanh nhập lệnh
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("$ ", color = C.Lime, fontSize = 14.sp, fontFamily = FontFamily.Monospace)
-                Box(Modifier.weight(1f).clip(RoundedCornerShape(8.dp))
-                    .background(C.BgSurface).padding(8.dp)) {
+                Text("$ ", color = C.Green, fontSize = 14.sp, fontFamily = FontFamily.Monospace)
+                Box(Modifier.weight(1f).clip(RoundedCornerShape(8.dp)).background(C.Surface).padding(8.dp)) {
                     BasicTextField(
                         value = cmd, onValueChange = { cmd = it },
-                        textStyle = TextStyle(color = C.Cyan, fontSize = 12.sp,
-                            fontFamily = FontFamily.Monospace),
-                        modifier = Modifier.fillMaxWidth(), singleLine = true)
+                        textStyle = TextStyle(color = C.TextPrimary, fontSize = 13.sp, fontFamily = FontFamily.Monospace),
+                        modifier = Modifier.fillMaxWidth(), singleLine = true
+                    )
                     if (cmd.isEmpty()) {
-                        Text("wm size", color = C.TextSecondary.copy(alpha = 0.5f),
-                            fontSize = 12.sp, fontFamily = FontFamily.Monospace)
+                        Text("settings get global zen_mode", color = C.TextSecondary.copy(alpha = 0.5f), fontSize = 13.sp, fontFamily = FontFamily.Monospace)
                     }
                 }
             }
 
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                NeonButton("▶ RUN", C.Lime, {
-                    if (cmd.isNotBlank() && ready) {
-                        val c = cmd
-                        history = history + "$ $c"
-                        cmd = ""
-                        scope.launch {
-                            history = history + ShellExecutor.execute(c).output
-                        }
-                    }
-                }, enabled = cmd.isNotBlank() && ready, modifier = Modifier.weight(1f))
-                NeonButton("✕ CLEAR", C.Red, {
-                    history = emptyList(); cmd = ""
-                }, modifier = Modifier.weight(1f))
+                NeonButton(
+                    text = if (isRunning) "⏳ ĐANG CHẠY..." else "▶ RUN", 
+                    accent = C.Green, 
+                    onClick = { runCmd() }, 
+                    enabled = cmd.isNotBlank() && ready && !isRunning, 
+                    modifier = Modifier.weight(1f)
+                )
+                NeonButton(
+                    text = "✕ CLEAR", 
+                    accent = C.Red, 
+                    onClick = { outputLog = "Nhập lệnh và bấm RUN...\n" }, 
+                    modifier = Modifier.weight(1f)
+                )
             }
-
-            Spacer(Modifier.height(12.dp))
-            Text("// Quick:", color = C.TextSecondary, fontSize = 10.sp)
-            Spacer(Modifier.height(4.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf("wm size", "getprop", "pm list packages -3").forEach { q ->
-                    Box(Modifier.clip(RoundedCornerShape(6.dp))
-                        .background(C.BgSurface)
-                        .clickable { cmd = q }
-                        .padding(horizontal = 10.dp, vertical = 6.dp)) {
-                        Text(q, color = C.Cyan, fontSize = 10.sp,
-                            fontFamily = FontFamily.Monospace)
-                    }
-                }
-            }
-            Spacer(Modifier.height(30.dp))
+            Spacer(Modifier.height(16.dp))
         }
     }
 }
