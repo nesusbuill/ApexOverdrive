@@ -5,7 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
@@ -29,15 +28,30 @@ object C {
     val Success = Lime
     val Warning = Orange
     val Danger = Red
+    
+    // ==========================================
+    // BÍ DANH (ALIAS) - FIX LỖI CHO CÁC FILE CŨ
+    // ==========================================
+    val BgDeep = DarkBg
+    val BgSurface = Surface
+    val BgElevated = Color(0xFF1A233A) 
+    
     fun fromLong(l: Long) = Color(l)
 }
 
 private val scheme = darkColorScheme(
-    primary = C.Cyan, secondary = C.Purple, background = C.DarkBg, surface = C.Surface,
-    onPrimary = C.DarkBg, onBackground = C.TextPrimary, onSurface = C.TextPrimary, error = C.Red
+    primary = C.Cyan,
+    secondary = C.Purple,
+    background = C.DarkBg,
+    surface = C.Surface,
+    onPrimary = C.DarkBg,
+    onBackground = C.TextPrimary,
+    onSurface = C.TextPrimary,
+    error = C.Red
 )
 
 val SansFont: FontFamily = FontFamily.SansSerif
+
 val ApexTypography = Typography(
     displayLarge = TextStyle(fontFamily = SansFont, fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 1.sp),
     titleLarge = TextStyle(fontFamily = SansFont, fontWeight = FontWeight.Bold, fontSize = 16.sp),
