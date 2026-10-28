@@ -9,49 +9,42 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 object C {
-    val Cyan = Color(0xFF00E5FF)
-    val Purple = Color(0xFFD500F9)
-    val Blue = Color(0xFF2979FF)
-    val DarkBg = Color(0xFF060B14)
-    val Surface = Color(0xFF131A2A)
-    val SurfaceGlass = Color(0xBB1A233A)
-    val Border = Color(0xFF2A3756)
+    val Gold = Color(0xFFFFD700)
+    val Silver = Color(0xFFE0E0E0)
+    val DarkGold = Color(0xFFB8860B)
     
-    val TextPrimary = Color(0xFFF1F5F9)
-    val TextSecondary = Color(0xFF8B94A8)
+    val BgDeep = Color(0xFF050505)
+    val Surface = Color(0xFF121212)
+    val SurfaceGlass = Color(0xBB1A1A1A)
+    val Border = Color(0xFF333333)
+    
+    val TextPrimary = Color(0xFFF5F5F5)
+    val TextSecondary = Color(0xFF9E9E9E)
     
     val Red = Color(0xFFFF1744)
+    val Green = Color(0xFF00E676)
+    val Cyan = Color(0xFF00E5FF)
+    val Purple = Color(0xFFD500F9)
     val Magenta = Purple
-    val Lime = Color(0xFF00E676)
+    val Lime = Green
     val Orange = Color(0xFFFF9800)
-    val Gold = Color(0xFFFFD700)
-    val Success = Lime
-    val Warning = Orange
+    val Success = Green
+    val Warning = Color(0xFFFFB300)
     val Danger = Red
     
-    // ==========================================
-    // BÍ DANH (ALIAS) - FIX LỖI CHO CÁC FILE CŨ
-    // ==========================================
-    val BgDeep = DarkBg
+    // Alias cho file cũ
     val BgSurface = Surface
-    val BgElevated = Color(0xFF1A233A) 
+    val BgElevated = Color(0xFF1E1E1E)
     
     fun fromLong(l: Long) = Color(l)
 }
 
 private val scheme = darkColorScheme(
-    primary = C.Cyan,
-    secondary = C.Purple,
-    background = C.DarkBg,
-    surface = C.Surface,
-    onPrimary = C.DarkBg,
-    onBackground = C.TextPrimary,
-    onSurface = C.TextPrimary,
-    error = C.Red
+    primary = C.Gold, secondary = C.Silver, background = C.BgDeep, surface = C.Surface,
+    onPrimary = C.BgDeep, onBackground = C.TextPrimary, onSurface = C.TextPrimary, error = C.Red
 )
 
 val SansFont: FontFamily = FontFamily.SansSerif
-
 val ApexTypography = Typography(
     displayLarge = TextStyle(fontFamily = SansFont, fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 1.sp),
     titleLarge = TextStyle(fontFamily = SansFont, fontWeight = FontWeight.Bold, fontSize = 16.sp),
