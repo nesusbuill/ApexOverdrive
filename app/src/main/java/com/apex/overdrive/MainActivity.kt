@@ -41,12 +41,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 1. Ép xoay ngang
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-        // 2. Ẩn thanh hệ thống
         hideSystemUI()
 
-        // Anti-Tamper Check
         if (!BuildConfig.DEBUG) {
             val integrity = IntegrityCheck.verify(this)
             if (!integrity.passed) {
@@ -76,8 +73,7 @@ class MainActivity : ComponentActivity() {
         shizuku.register()
         thermal.start(lifecycleScope)
 
-        if (Build.VERSION.SDK_INT >= 33)
-            notifPerm.launch(Manifest.permission.POST_NOTIFICATIONS)
+        if (Build.VERSION.SDK_INT >= 33) notifPerm.launch(Manifest.permission.POST_NOTIFICATIONS)
 
         try {
             val svc = Intent(this, BoostService::class.java)
@@ -194,7 +190,7 @@ class MainActivity : ComponentActivity() {
                 suspend fun restoreAllNow() {
                     applying = true; applyMsg = null
                     val r = engine.restoreAll()
-                    applyMsg = "✓ Restored ${r.first} · ✗ ${r.second} failed"
+                    applyMsg = "✓ Đã khôi phục ${r.first} tinh chỉnh"
                     applying = false
                 }
 
