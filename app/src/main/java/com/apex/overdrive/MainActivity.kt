@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -12,6 +13,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.*
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.apex.overdrive.core.*
 import com.apex.overdrive.service.AutoBoostService
@@ -37,7 +41,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // ═══════ CẤP 3: ANTI-TAMPER ═══════
+        // 1. Ép xoay ngang
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        // 2. Ẩn thanh hệ thống
+        hideSystemUI()
+
+        // Anti-Tamper Check
         if (!BuildConfig.DEBUG) {
             val integrity = IntegrityCheck.verify(this)
             if (!integrity.passed) {
@@ -255,7 +264,22 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun hideSystemUI() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        val controller = WindowInsetsControllerCompat(window, window.decorView)
+        controller.hide(WindowInsetsCompat.Type.systemBars())
+        controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) hideSystemUI()
+    }
+
     override fun onDestroy() {
-        thermal.stop(); session.finish(); shizuku.unregister(); super.onDestroy()
+        thermal.stop()
+        session.finish()
+        shizuku.unregister()
+        super.onDestroy()
     }
 }
