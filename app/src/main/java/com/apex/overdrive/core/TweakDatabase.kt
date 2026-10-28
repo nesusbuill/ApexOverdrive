@@ -8,39 +8,56 @@ data class Tweak(
     val category: TweakCategory = TweakCategory.SYSTEM,
     val risky: Boolean = false, val needsRoot: Boolean = false
 )
+
 data class GameProfile(val pkg: String, val name: String, val emoji: String, val accent: Long)
 
 object TweakDatabase {
     val GAMES = listOf(
-        GameProfile("com.dts.freefireth", "Free Fire", "🔥", 0xFF00E5FF),
-        GameProfile("com.mobile.legends", "Mobile Legends", "⚔️", 0xFFD500F9),
-        GameProfile("com.tencent.ig", "PUBG Mobile", "🎯", 0xFFFFB300),
-        GameProfile("com.miHoYo.GenshinImpact", "Genshin", "🌟", 0xFF00E5FF)
+        GameProfile("com.garena.game.kgvn", "Liên Quân Mobile", "⚔️", 0xFF00E5FF),
+        GameProfile("com.roblox.client", "Roblox", "🟥", 0xFFFF1E1E),
+        GameProfile("com.dts.freefireth", "Free Fire", "🔥", 0xFFFF1E1E),
+        GameProfile("com.tencent.ig", "PUBG Mobile", "🎯", 0xFFF59E0B),
+        GameProfile("com.miHoYo.GenshinImpact", "Genshin Impact", "🌟", 0xFFD500F9)
     )
     fun gameByName(pkg: String) = GAMES.firstOrNull { it.pkg == pkg }
 
-    fun gameBoost(pkg: String): List<Tweak> = listOf(
-        Tweak("${pkg}_mode", "GAME MODE PERF", "Native API",
-            "cmd game mode performance $pkg", "cmd game mode standard $pkg", TweakCategory.GAME),
-        Tweak("${pkg}_120", "LOCK 120 FPS", "Refresh rate",
-            "cmd game set-preferred-refresh-rate 120 $pkg", "cmd game set-preferred-refresh-rate 60 $pkg", TweakCategory.GAME),
-        Tweak("${pkg}_compile", "AOT COMPILE", "Faster load",
-            "cmd package compile -m speed-profile -f $pkg", "cmd package compile -m verify $pkg", TweakCategory.GAME),
-        Tweak("${pkg}_wl", "BATTERY WHITELIST", "No kill",
-            "cmd deviceidle whitelist +$pkg", "cmd deviceidle whitelist -$pkg", TweakCategory.GAME)
-    )
+    fun gameBoost(pkg: String): List<Tweak> {
+        val isLienQuan = pkg == "com.garena.game.kgvn"
+        val isRoblox = pkg == "com.roblox.client"
+        
+        return listOf(
+            Tweak("${pkg}_mode", "GAME MODE PERFORMANCE", "Ép xung hiệu năng cao",
+                "cmd game mode performance $pkg", "cmd game mode standard $pkg", TweakCategory.GAME),
+            Tweak("${pkg}_120", "LOCK 120 FPS", "Khóa tần số quét 120Hz",
+                "cmd game set-preferred-refresh-rate 120 $pkg", "cmd game set-preferred-refresh-rate 60 $pkg", TweakCategory.GAME),
+            Tweak("${pkg}_compile", "AOT COMPILE", "Biên dịch sẵn game",
+                "cmd package compile -m speed-profile -f $pkg", "cmd package compile -m verify $pkg", TweakCategory.GAME),
+            Tweak("${pkg}_wl", "BATTERY WHITELIST", "Loại khỏi tối ưu pin",
+                "cmd deviceidle whitelist +$pkg", "cmd deviceidle whitelist -$pkg", TweakCategory.GAME),
+            Tweak("${pkg}_keep", "KEEP IN RAM", "Giữ game trong RAM",
+                "am set-inactive $pkg false", null, TweakCategory.GAME),
+                
+            *if (isLienQuan || isRoblox) listOf(
+                Tweak("${pkg}_720p", "GIẢM ĐỒ HỌA 720p", "Hạ độ phân giải, FPS mượt hơn",
+                    "wm size 720x1280\nwm density 240", 
+                    "wm size reset\nwm density reset", TweakCategory.DISPLAY, risky = true),
+                Tweak("${pkg}_540p", "GIẢM ĐỒ HỌA 540p (SIÊU MƯỢT)", "Dành cho máy yếu, đồ họa mờ",
+                    "wm size 540x960\nwm density 160", 
+                    "wm size reset\nwm density reset", TweakCategory.DISPLAY, risky = true)
+            ) else emptyList()
+        )
+    }
 
     val SYSTEM_TWEAKS = listOf(
-        Tweak("anim_off", "DISABLE ANIMATIONS", "UI Speed",
+        Tweak("anim_off", "DISABLE ANIMATIONS", "Animation scales to 0",
             "settings put global window_animation_scale 0.0\nsettings put global transition_animation_scale 0.0\nsettings put global animator_duration_scale 0.0",
             "settings put global window_animation_scale 1.0\nsettings put global transition_animation_scale 1.0\nsettings put global animator_duration_scale 1.0", TweakCategory.DISPLAY),
-        Tweak("refresh_120", "PEAK 120Hz", "Display",
+        Tweak("refresh_120", "PEAK 120Hz", "Peak refresh 120",
             "settings put system peak_refresh_rate 120.0", "settings put system peak_refresh_rate 60.0", TweakCategory.DISPLAY),
         Tweak("hwui_vk", "HWUI SKIAVK", "Vulkan render",
             "setprop debug.hwui.renderer skiavk", "setprop debug.hwui.renderer opengl", TweakCategory.DISPLAY),
         Tweak("phantom_max", "MAX PHANTOM", "RAM",
-            "device_config put activity_manager max_phantom_processes 2147483647",
-            "device_config delete activity_manager max_phantom_processes", TweakCategory.SYSTEM)
+            "device_config put activity_manager max_phantom_processes 2147483647", "device_config delete activity_manager max_phantom_processes", TweakCategory.SYSTEM)
     )
     val TOUCH_TWEAKS = listOf(
         Tweak("polling_120", "TOUCH POLLING", "120Hz",
