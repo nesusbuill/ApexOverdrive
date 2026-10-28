@@ -32,7 +32,6 @@ object C {
     val Warning = Color(0xFFFFB300)
     val Danger = Red
     
-    // Alias cho file cũ
     val BgSurface = Surface
     val BgElevated = Color(0xFF1E1E1E)
     
