@@ -22,12 +22,16 @@ object TweakDatabase {
     fun gameByName(pkg: String) = GAMES.firstOrNull { it.pkg == pkg }
 
     fun gameBoost(pkg: String): List<Tweak> {
-        val isLienQuan = pkg == "com.garena.game.kgvn"
-        val isRoblox = pkg == "com.roblox.client"
-        
-        // 1. Danh sách tinh chỉnh cơ bản cho mọi game
-        val baseTweaks = listOf(
-            Tweak("${pkg}_mode", "GAME MODE PERFORMANCE", "Ép xung hiệu năng cao",
+        // Sử dụng lệnh an toàn của Android 12+ (Không dùng wm size)
+        val downscaleTweak = Tweak(
+            "${pkg}_downscale", "GIẢM ĐỒ HỌA TRONG GAME", "Hạ độ phân giải render của game",
+            "cmd game set-downscale-factor $pkg 0.75",
+            "cmd game set-downscale-factor $pkg 1.0",
+            TweakCategory.GAME
+        )
+
+        return listOf(
+            Tweak("${pkg}_mode", "GAME MODE PERF", "Ép xung hiệu năng cao",
                 "cmd game mode performance $pkg", "cmd game mode standard $pkg", TweakCategory.GAME),
             Tweak("${pkg}_120", "LOCK 120 FPS", "Khóa tần số quét 120Hz",
                 "cmd game set-preferred-refresh-rate 120 $pkg", "cmd game set-preferred-refresh-rate 60 $pkg", TweakCategory.GAME),
@@ -35,26 +39,8 @@ object TweakDatabase {
                 "cmd package compile -m speed-profile -f $pkg", "cmd package compile -m verify $pkg", TweakCategory.GAME),
             Tweak("${pkg}_wl", "BATTERY WHITELIST", "Loại khỏi tối ưu pin",
                 "cmd deviceidle whitelist +$pkg", "cmd deviceidle whitelist -$pkg", TweakCategory.GAME),
-            Tweak("${pkg}_keep", "KEEP IN RAM", "Giữ game trong RAM",
-                "am set-inactive $pkg false", null, TweakCategory.GAME)
+            downscaleTweak
         )
-        
-        // 2. Danh sách tinh chỉnh giảm đồ họa (chỉ dành cho Liên Quân và Roblox)
-        val downscaleTweaks = if (isLienQuan || isRoblox) {
-            listOf(
-                Tweak("${pkg}_720p", "GIẢM ĐỒ HỌA 720p", "Hạ độ phân giải, FPS mượt hơn",
-                    "wm size 720x1280\nwm density 240", 
-                    "wm size reset\nwm density reset", TweakCategory.DISPLAY, risky = true),
-                Tweak("${pkg}_540p", "GIẢM ĐỒ HỌA 540p (SIÊU MƯỢT)", "Dành cho máy yếu, đồ họa mờ",
-                    "wm size 540x960\nwm density 160", 
-                    "wm size reset\nwm density reset", TweakCategory.DISPLAY, risky = true)
-            )
-        } else {
-            emptyList()
-        }
-
-        // 3. Nối 2 danh sách lại với nhau bằng dấu +
-        return baseTweaks + downscaleTweaks
     }
 
     val SYSTEM_TWEAKS = listOf(
@@ -63,49 +49,13 @@ object TweakDatabase {
             "settings put global window_animation_scale 1.0\nsettings put global transition_animation_scale 1.0\nsettings put global animator_duration_scale 1.0", TweakCategory.DISPLAY),
         Tweak("refresh_120", "PEAK 120Hz", "Peak refresh 120",
             "settings put system peak_refresh_rate 120.0", "settings put system peak_refresh_rate 60.0", TweakCategory.DISPLAY),
-        Tweak("hwui_vk", "HWUI SKIAVK", "Vulkan render",
-            "setprop debug.hwui.renderer skiavk", "setprop debug.hwui.renderer opengl", TweakCategory.DISPLAY),
         Tweak("phantom_max", "MAX PHANTOM", "RAM",
             "device_config put activity_manager max_phantom_processes 2147483647", "device_config delete activity_manager max_phantom_processes", TweakCategory.SYSTEM)
     )
-    val TOUCH_TWEAKS = listOf(
-        Tweak("polling_120", "TOUCH POLLING", "120Hz",
-            "settings put secure touch_polling_rate 120", "settings put secure touch_polling_rate 60", TweakCategory.TOUCH),
-        Tweak("haptic_off", "DISABLE HAPTIC", "Aim fix",
-            "settings put system haptic_feedback_enabled 0", "settings put system haptic_feedback_enabled 1", TweakCategory.TOUCH)
-    )
-    val NETWORK_TWEAKS = listOf(
-        Tweak("dns_flush", "FLUSH DNS", "Clear cache", "ndc resolver flushdefaultif", null, TweakCategory.NETWORK)
-    )
-    val DOWNSCALE_TWEAKS = listOf(
-        Tweak("res_720", "DOWNSCALE 720p", "Reduce GPU load",
-            "wm size 720x1280\nwm density 240", "wm size reset\nwm density reset", TweakCategory.DISPLAY, true)
-    )
-    val ROOT_TWEAKS = listOf(
-        Tweak("root_cpu", "CPU MAX", "Root Only",
-            "for p in /sys/devices/system/cpu/cpufreq/policy*; do echo performance > \$p/scaling_governor 2>/dev/null; done",
-            "for p in /sys/devices/system/cpu/cpufreq/policy*; do echo schedutil > \$p/scaling_governor 2>/dev/null; done",
-            TweakCategory.ROOT, true, true)
-    )
-    val AIM_FIX_TWEAKS = listOf(
-        Tweak("aim_pressure", "REDUCE PRESSURE", "Touch",
-            "settings put global touch.pressure.scale 0.001", "settings put global touch.pressure.scale 1.0", TweakCategory.TOUCH),
-        Tweak("aim_polling_240", "TOUCH 240Hz", "Sampling",
-            "settings put secure touch_polling_rate 240", "settings put secure touch_polling_rate 120", TweakCategory.TOUCH, true)
-    )
-    fun aimFixPreset(): List<Tweak> = TOUCH_TWEAKS + AIM_FIX_TWEAKS
-    fun aimFixPresetAggressive(): List<Tweak> = aimFixPreset()
 
     fun forMode(id: String, withRoot: Boolean = false): List<Tweak> = when (id) {
-        "balanced" -> SYSTEM_TWEAKS.take(2) + TOUCH_TWEAKS.take(1)
-        "turbo" -> SYSTEM_TWEAKS + TOUCH_TWEAKS + NETWORK_TWEAKS
-        "beast" -> SYSTEM_TWEAKS + TOUCH_TWEAKS + NETWORK_TWEAKS + DOWNSCALE_TWEAKS
-        "root_max" -> SYSTEM_TWEAKS + TOUCH_TWEAKS + ROOT_TWEAKS
+        "balanced" -> SYSTEM_TWEAKS.take(2)
+        "turbo" -> SYSTEM_TWEAKS
         else -> emptyList()
     }
-
-    val ALL: List<Tweak> by lazy {
-        (GAMES.flatMap { gameBoost(it.pkg) } + SYSTEM_TWEAKS + TOUCH_TWEAKS + NETWORK_TWEAKS + DOWNSCALE_TWEAKS + ROOT_TWEAKS + AIM_FIX_TWEAKS).distinctBy { it.id }
-    }
-    fun byId(id: String) = ALL.firstOrNull { it.id == id }
 }
