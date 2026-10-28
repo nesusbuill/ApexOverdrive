@@ -75,7 +75,7 @@ fun ModesScreen(
                 val isSel = selected == m.id
                 Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
                     .background(Brush.horizontalGradient(
-                        if (isSel) listOf(m.accent.copy(alpha = 0.35f), C.BgElevated)
+                        colors = if (isSel) listOf(m.accent.copy(alpha = 0.35f), C.BgElevated)
                         else listOf(C.BgSurface, C.BgElevated)))
                     .clickable { selected = m.id }.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
