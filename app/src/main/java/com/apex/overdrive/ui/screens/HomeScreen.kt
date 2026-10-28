@@ -38,7 +38,8 @@ fun HomeScreen(
     cpu: Int, ram: Int, temp: Float, fps: Int, fpsHistory: List<Float>,
     szState: ShizukuManager.State, appliedCount: Int, detectedGame: String?,
     sessionTime: String, onNavigate: (String) -> Unit, onShizukuAction: () -> Unit,
-    onRestoreAll: () -> Unit
+    onRestoreAll: () -> Unit,
+    onLaunchGame: (String) -> Unit // Hàm mới để mở game
 ) {
     var selectedGamePkg by remember { mutableStateOf(detectedGame ?: "com.garena.game.kgvn") }
     
@@ -55,9 +56,7 @@ fun HomeScreen(
     val realRam = ram
 
     Row(Modifier.fillMaxSize().background(C.BgDeep)) {
-        // ==========================================
-        // CỘT TRÁI: SIDEBAR
-        // ==========================================
+        // CỘT TRÁI
         Column(Modifier.width(180.dp).fillMaxHeight().background(C.Surface).padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 GamingAvatar(40)
@@ -86,17 +85,10 @@ fun HomeScreen(
             Spacer(Modifier.weight(1f))
         }
 
-        // ==========================================
-        // CỘT GIỮA: DASHBOARD
-        // ==========================================
+        // CỘT GIỮA
         Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()).padding(16.dp)) {
             
-            // HÀNG 1: THÔNG SỐ & BOOST
-            Row(
-                Modifier.fillMaxWidth().height(210.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(Modifier.fillMaxWidth().height(210.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(20.dp)).background(C.Surface).padding(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Memory, contentDescription = null, tint = C.Gold, modifier = Modifier.size(14.dp))
@@ -104,7 +96,6 @@ fun HomeScreen(
                         Text("Hiệu suất thực", color = C.TextPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                     }
                     Spacer(Modifier.height(12.dp))
-                    
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Box(contentAlignment = Alignment.Center, modifier = Modifier.size(60.dp)) {
                             Canvas(Modifier.fillMaxSize()) {
@@ -125,7 +116,7 @@ fun HomeScreen(
                     }
                 }
 
-                // Nút Boost (Tự đổi Icon theo Game)
+                // NÚT BOOST (KÍCH HOẠT MỞ GAME)
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.size(180.dp)) {
                     val infiniteTransition = rememberInfiniteTransition(label = "radar")
                     val ringScale by infiniteTransition.animateFloat(0.9f, 1.1f, animationSpec = infiniteRepeatable(tween(2000, easing = LinearEasing), RepeatMode.Restart))
@@ -135,7 +126,7 @@ fun HomeScreen(
                     Canvas(Modifier.size(140.dp)) { drawCircle(brush = Brush.sweepGradient(listOf(C.Gold, C.DarkGold, C.Gold)), style = Stroke(width = 4.dp.toPx())) }
 
                     Column(
-                        Modifier.size(120.dp).clip(CircleShape).background(Brush.radialGradient(listOf(C.Surface, C.BgDeep))).clickable { onNavigate("ff") },
+                        Modifier.size(120.dp).clip(CircleShape).background(Brush.radialGradient(listOf(C.Surface, C.BgDeep))).clickable { onLaunchGame(selectedGamePkg) }, // BẤM ĐỂ MỞ GAME
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
@@ -146,12 +137,11 @@ fun HomeScreen(
                         }
                         Icon(gameIcon, contentDescription = null, tint = C.Gold, modifier = Modifier.size(32.dp))
                         Spacer(Modifier.height(4.dp))
-                        Text("TĂNG TỐC", color = C.TextPrimary, fontWeight = FontWeight.Black, fontSize = 14.sp)
+                        Text("CHIẾN NGAY", color = C.TextPrimary, fontWeight = FontWeight.Black, fontSize = 14.sp)
                         Text(gameName, color = C.TextSecondary, fontSize = 9.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
 
-                // Bảng Toggles
                 Column(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(20.dp)).background(C.Surface).padding(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Tune, contentDescription = null, tint = C.Gold, modifier = Modifier.size(14.dp))
@@ -168,10 +158,10 @@ fun HomeScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            // HÀNG 2: NÚT GIẢM ĐỒ HỌA (Hiển thị cho Liên Quân & Roblox)
+            // NÚT GIẢM ĐỒ HỌA
             if (isLienQuan || isRoblox) {
                 Row(Modifier.fillMaxWidth().height(70.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Box(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(16.dp)).background(C.Surface).border(1.dp, C.Gold.copy(alpha = 0.3f), RoundedCornerShape(16.dp)).clickable { onNavigate("ff") }, contentAlignment = Alignment.Center) {
+                    Box(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(16.dp)).background(C.Surface).border(1.dp, C.Gold.copy(alpha = 0.3f), RoundedCornerShape(16.dp)).clickable { onLaunchGame(selectedGamePkg) }, contentAlignment = Alignment.Center) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.PhotoSizeSelectSmall, contentDescription = null, tint = C.Gold, modifier = Modifier.size(24.dp))
                             Spacer(Modifier.width(10.dp))
@@ -182,7 +172,7 @@ fun HomeScreen(
                         }
                     }
                     
-                    Box(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(16.dp)).background(C.Surface).border(1.dp, C.Gold.copy(alpha = 0.3f), RoundedCornerShape(16.dp)).clickable { onNavigate("ff") }, contentAlignment = Alignment.Center) {
+                    Box(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(16.dp)).background(C.Surface).border(1.dp, C.Gold.copy(alpha = 0.3f), RoundedCornerShape(16.dp)).clickable { onLaunchGame(selectedGamePkg) }, contentAlignment = Alignment.Center) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Speed, contentDescription = null, tint = C.Gold, modifier = Modifier.size(24.dp))
                             Spacer(Modifier.width(10.dp))
@@ -196,7 +186,7 @@ fun HomeScreen(
                 Spacer(Modifier.height(16.dp))
             }
 
-            // HÀNG 3: CHỌN GAME
+            // CHỌN GAME
             Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(C.Surface).padding(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.SportsEsports, contentDescription = null, tint = C.Gold, modifier = Modifier.size(14.dp))
