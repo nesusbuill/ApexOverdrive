@@ -14,10 +14,7 @@ class AutoBoostService : Service() {
     private lateinit var monitor: SystemMonitor
     private lateinit var engine: TweakEngine
     private lateinit var settingsStore: SettingsStore
-    private lateinit var gameLib: GameLibrary
-    private lateinit var session: GameSession
-    private var boostedPkg: String? = null
-    private var savedBrightness: Int = -1
+    private var isBoosting = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -26,69 +23,55 @@ class AutoBoostService : Service() {
         monitor = SystemMonitor(this)
         engine = TweakEngine(this)
         settingsStore = SettingsStore(this)
-        gameLib = GameLibrary(this)
-        session = GameSession(this)
         createChannel()
-        startForeground(2001, buildNotif("Auto-boost monitoring..."))
+        startForeground(2001, buildNotif("Zero-Touch đang theo dõi..."))
         scope.launch { watchLoop() }
     }
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int) = START_STICKY
 
     private suspend fun watchLoop() {
         while (currentCoroutineContext().isActive) {
             try {
                 val cfg = settingsStore.settings.value
-                if (!cfg.autoBoost) { delay(3000); continue }
-                val fg = monitor.currentForegroundPackage()
-                val tracked = gameLib.tracked()
-                if (fg != null && fg in tracked && fg != boostedPkg) {
-                    if (boostedPkg != null) restoreAll()
-                    onGameStart(fg, cfg)
-                } else if ((fg == null || fg !in tracked) && boostedPkg != null) {
+                val currentPkg = monitor.currentForegroundPackage()
+                val isGame = currentPkg != null && TweakDatabase.GAMES.any { it.pkg == currentPkg }
+
+                if (!cfg.autoBoost) {
+                    if (isBoosting) restoreAll(currentPkg)
                     delay(3000)
-                    val still = monitor.currentForegroundPackage()
-                    if (still == null || still !in tracked) onGameEnd()
+                    continue
+                }
+
+                if (isGame && !isBoosting) {
+                    isBoosting = true
+                    updateNotif("🎮 Đã phát hiện Game. Đang tối ưu...")
+                    engine.boostGame(currentPkg!!)
+                    ShellExecutor.execute("settings put global zen_mode 1")
+                    
+                    if (cfg.reduceGraphics && Build.VERSION.SDK_INT >= 31) {
+                        ShellExecutor.execute("cmd game set-downscale-factor $currentPkg 0.75")
+                    }
+                } else if (!isGame && isBoosting) {
+                    delay(2000)
+                    val checkAgain = monitor.currentForegroundPackage()
+                    if (checkAgain == null || TweakDatabase.GAMES.none { it.pkg == checkAgain }) {
+                        restoreAll(currentPkg)
+                    }
                 }
             } catch (_: Throwable) {}
             delay(3000)
         }
     }
 
-    private suspend fun onGameStart(pkg: String, cfg: AppSettings) {
-        boostedPkg = pkg
-        session.start(pkg)
-        if (cfg.safeMode) engine.applyBatch(TweakDatabase.gameBoost(pkg).filter { !it.risky })
-        else engine.boostGame(pkg)
-        if (cfg.autoDnd) ShellExecutor.execute("settings put global zen_mode 1")
-        if (cfg.autoBrightness) {
-            savedBrightness = ShellExecutor.execute("settings get system screen_brightness")
-                .output.trim().toIntOrNull() ?: -1
-            ShellExecutor.execute("settings put system screen_brightness 255")
+    private suspend fun restoreAll(lastPkg: String?) {
+        isBoosting = false
+        engine.restoreAll()
+        ShellExecutor.execute("settings put global zen_mode 0")
+        
+        if (lastPkg != null && Build.VERSION.SDK_INT >= 31) {
+            ShellExecutor.execute("cmd game set-downscale-factor $lastPkg 1.0")
         }
-        if (cfg.fpsOverlay) try {
-            val i = Intent(this, FpsOverlay::class.java)
-            if (Build.VERSION.SDK_INT >= 26) startForegroundService(i) else startService(i)
-        } catch (_: Throwable) {}
-        updateNotif("Playing: ${TweakDatabase.gameByName(pkg)?.name ?: pkg} · Boosted")
-    }
-
-    private suspend fun onGameEnd() {
-        session.finish()
-        restoreAll()
-        boostedPkg = null
-        updateNotif("Auto-boost monitoring...")
-    }
-
-    private suspend fun restoreAll() {
-        val cfg = settingsStore.settings.value
-        if (cfg.autoRestore) engine.restoreAll()
-        if (cfg.autoDnd) ShellExecutor.execute("settings put global zen_mode 0")
-        if (cfg.autoBrightness && savedBrightness >= 0) {
-            ShellExecutor.execute("settings put system screen_brightness $savedBrightness")
-            savedBrightness = -1
-        }
-        if (cfg.fpsOverlay) try { stopService(Intent(this, FpsOverlay::class.java)) } catch (_: Throwable) {}
+        
+        updateNotif("Zero-Touch đang theo dõi...")
     }
 
     private fun createChannel() {
@@ -100,21 +83,12 @@ class AutoBoostService : Service() {
 
     private fun buildNotif(text: String): Notification =
         NotificationCompat.Builder(this, "apex_auto")
-            .setContentTitle("APEX AUTO-BOOST")
-            .setContentText(text)
-            .setSmallIcon(android.R.drawable.ic_menu_manage)
-            .setOngoing(true)
-            .build()
+            .setContentTitle("APEX ZERO-TOUCH").setContentText(text)
+            .setSmallIcon(android.R.drawable.ic_menu_manage).setOngoing(true).build()
 
     private fun updateNotif(text: String) {
-        try {
-            (getSystemService(NOTIFICATION_SERVICE) as NotificationManager)
-                .notify(2001, buildNotif(text))
-        } catch (_: Throwable) {}
+        try { (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).notify(2001, buildNotif(text)) } catch (_: Throwable) {}
     }
 
-    override fun onDestroy() {
-        scope.cancel()
-        super.onDestroy()
-    }
+    override fun onDestroy() { scope.cancel(); super.onDestroy() }
 }
