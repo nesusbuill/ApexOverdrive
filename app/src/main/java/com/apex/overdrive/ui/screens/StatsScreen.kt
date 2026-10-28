@@ -23,40 +23,31 @@ fun StatsScreen(
             BackBar("STATS", onBack)
             Spacer(Modifier.height(16.dp))
 
-            Row(horizontalArrangement = Arrangement.SpaceEvenly,
-                modifier = Modifier.fillMaxWidth()) {
+            Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
                 StatRing("CPU", cpu.toFloat(), if (cpu > 70) C.Red else C.Cyan)
                 StatRing("RAM", ram.toFloat(), if (ram > 80) C.Orange else C.Lime)
             }
             Spacer(Modifier.height(16.dp))
-            Row(horizontalArrangement = Arrangement.SpaceEvenly,
-                modifier = Modifier.fillMaxWidth()) {
+            Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
                 if (fps > 0) StatRing("FPS", (fps / 120f * 100f).coerceIn(0f, 100f),
                     if (fps >= 60) C.Lime else if (fps >= 30) C.Gold else C.Red)
                 if (temp > 0) StatRing("TEMP", (temp / 100f * 100f).coerceIn(0f, 100f),
                     if (temp > 45) C.Red else C.Gold)
             }
-            if (battery > 0) {
-                Spacer(Modifier.height(16.dp))
-                Row(horizontalArrangement = Arrangement.SpaceEvenly,
-                    modifier = Modifier.fillMaxWidth()) {
-                    StatRing("PIN", battery.toFloat(), if (battery < 20) C.Red else C.Lime)
-                    StatRing("PIN°C", (batteryTemp / 60f * 100f).coerceIn(0f, 100f),
-                        if (batteryTemp > 40) C.Red else C.Cyan)
-                }
-            }
 
             Spacer(Modifier.height(24.dp))
+            
+            // Đã bỏ tham số label ở đây
             if (fpsHistory.isNotEmpty()) {
-                LineChart(fpsHistory, C.Lime, label = "FPS HISTORY")
+                LineChart(fpsHistory, maxData = 120f, color = C.Gold)
                 Spacer(Modifier.height(12.dp))
             }
             if (ramHistory.isNotEmpty()) {
-                LineChart(ramHistory, C.Magenta, label = "RAM %")
+                LineChart(ramHistory, maxData = 100f, color = C.Magenta)
                 Spacer(Modifier.height(12.dp))
             }
             if (tempHistory.isNotEmpty()) {
-                LineChart(tempHistory, C.Red, label = "TEMP °C")
+                LineChart(tempHistory, maxData = 80f, color = C.Red)
             }
 
             Spacer(Modifier.height(20.dp))
