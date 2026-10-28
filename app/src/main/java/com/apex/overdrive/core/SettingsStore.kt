@@ -14,7 +14,8 @@ data class AppSettings(
     val thermalGuard: Boolean = true,
     val safeMode: Boolean = false,
     val defaultMode: String = "turbo",
-    val vibrationOnBoost: Boolean = true
+    val vibrationOnBoost: Boolean = true,
+    val reduceGraphics: Boolean = false
 )
 
 class SettingsStore(context: Context) {
@@ -31,7 +32,8 @@ class SettingsStore(context: Context) {
         thermalGuard = prefs.getBoolean("thermalGuard", true),
         safeMode = prefs.getBoolean("safeMode", false),
         defaultMode = prefs.getString("defaultMode", "turbo") ?: "turbo",
-        vibrationOnBoost = prefs.getBoolean("vibration", true)
+        vibrationOnBoost = prefs.getBoolean("vibration", true),
+        reduceGraphics = prefs.getBoolean("reduceGraphics", false)
     )
 
     fun update(block: (AppSettings) -> AppSettings) {
@@ -47,6 +49,7 @@ class SettingsStore(context: Context) {
             .putBoolean("safeMode", n.safeMode)
             .putString("defaultMode", n.defaultMode)
             .putBoolean("vibration", n.vibrationOnBoost)
+            .putBoolean("reduceGraphics", n.reduceGraphics)
             .apply()
     }
 }
