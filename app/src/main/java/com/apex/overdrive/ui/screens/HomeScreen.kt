@@ -30,36 +30,28 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.apex.overdrive.core.AppSettings
 import com.apex.overdrive.core.ShizukuManager
 import com.apex.overdrive.core.TweakDatabase
 import com.apex.overdrive.ui.*
 
 @Composable
 fun HomeScreen(
-    cpu: Int, ram: Int, temp: Float, fps: Int, fpsHistory: List<Float>,
+    cpu: Int, ram: Int, temp: Float, fps: Int, ping: Int, jitter: Int,
+    fpsHistory: List<Float>, tempHistory: List<Float>,
     szState: ShizukuManager.State, appliedCount: Int, detectedGame: String?,
-    sessionTime: String, onNavigate: (String) -> Unit, onShizukuAction: () -> Unit,
-    onRestoreAll: () -> Unit,
-    onLaunchGame: (String) -> Unit
+    settings: AppSettings,
+    isDownscaleSupported: Boolean,
+    onNavigate: (String) -> Unit, onRestoreAll: () -> Unit, onLaunchGame: (String) -> Unit,
+    onUpdateSettings: (AppSettings) -> Unit
 ) {
     var selectedGamePkg by remember { mutableStateOf(detectedGame ?: "com.garena.game.kgvn") }
     
-    LaunchedEffect(detectedGame) {
-        if (detectedGame != null) selectedGamePkg = detectedGame!!
-    }
-
     val isLienQuan = selectedGamePkg == "com.garena.game.kgvn"
     val isRoblox = selectedGamePkg == "com.roblox.client"
     val gameName = TweakDatabase.gameByName(selectedGamePkg)?.name ?: "Liên Quân Mobile"
-    
-    val realFps = if (fps > 0) fps else 0
-    val realCpu = cpu
-    val realRam = ram
 
     Row(Modifier.fillMaxSize().background(C.BgDeep)) {
-        // ==========================================
-        // CỘT TRÁI: SIDEBAR (Tối giản)
-        // ==========================================
         Column(Modifier.width(180.dp).fillMaxHeight().background(C.Surface).padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 GamingAvatar(40)
@@ -72,59 +64,43 @@ fun HomeScreen(
             Spacer(Modifier.height(24.dp))
             
             SidebarItem(Icons.Default.Home, "Trang chủ", true) {}
-            SidebarItem(Icons.Default.RocketLaunch, "Tăng tốc game", false) { onNavigate("ff") }
-            SidebarItem(Icons.Default.Memory, "Hiệu suất", false) { onNavigate("deep") }
             SidebarItem(Icons.Default.Terminal, "ADB Shell", false) { onNavigate("terminal") }
+            SidebarItem(Icons.Default.Settings, "Cài đặt", false) { onNavigate("settings") }
             
             Spacer(Modifier.height(16.dp))
-            // NÚT RESET (Giữ icon vì là nút quan trọng)
-            Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(C.Red.copy(alpha = 0.1f)).clickable { onRestoreAll() }.padding(12.dp)) {
+            Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(C.Red.copy(alpha = 0.15f)).border(1.dp, C.Red, RoundedCornerShape(10.dp)).clickable { onRestoreAll() }.padding(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                    Icon(Icons.Default.Refresh, contentDescription = null, tint = C.Red, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Warning, contentDescription = null, tint = C.Red, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Khôi phục gốc", color = C.Red, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text("KHÔI PHỤC GỐC", color = C.Red, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                 }
             }
             Spacer(Modifier.weight(1f))
         }
 
-        // ==========================================
-        // CỘT GIỮA: DASHBOARD
-        // ==========================================
         Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()).padding(16.dp)) {
             
-            // HÀNG 1: HIỆU SUẤT & BOOST & TÙY CHỈNH
-            Row(
-                Modifier.fillMaxWidth().height(210.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // 1. Thẻ hiệu suất (Bỏ icon tiêu đề)
+            Row(Modifier.fillMaxWidth().height(210.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(20.dp)).background(C.Surface).padding(16.dp)) {
-                    Text("HIỆU SUẤT THỰC", color = C.TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp, maxLines = 1)
-                    Spacer(Modifier.height(16.dp))
-                    
+                    Text("HIỆU SUẤT THỰC", color = C.TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(12.dp))
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(64.dp)) {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(60.dp)) {
                             Canvas(Modifier.fillMaxSize()) {
                                 drawCircle(color = C.Border, style = Stroke(width = 5.dp.toPx()))
-                                drawArc(color = C.Gold, startAngle = -90f, sweepAngle = if (realFps > 0) 270f * (realFps / 120f) else 0f, useCenter = false, style = Stroke(width = 5.dp.toPx(), cap = StrokeCap.Round))
+                                drawArc(color = C.Gold, startAngle = -90f, sweepAngle = if (fps > 0) 270f * (fps / 120f) else 0f, useCenter = false, style = Stroke(width = 5.dp.toPx(), cap = StrokeCap.Round))
                             }
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(if (realFps > 0) "$realFps" else "--", color = C.Gold, fontWeight = FontWeight.Black, fontSize = 18.sp)
-                                Text("FPS", color = C.TextSecondary, fontSize = 8.sp)
-                            }
+                            Text(if (fps > 0) "$fps" else "--", color = C.Gold, fontWeight = FontWeight.Black, fontSize = 16.sp)
                         }
                         Spacer(Modifier.width(12.dp))
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            StatProgressRow("CPU", "$realCpu%", realCpu / 100f)
-                            StatProgressRow("RAM", "$realRam%", realRam / 100f)
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            StatProgressRow("CPU", "$cpu%", cpu / 100f)
+                            StatProgressRow("RAM", "$ram%", ram / 100f)
                             StatProgressRow("TEMP", if (temp > 0) "${temp.toInt()}°C" else "--", if (temp > 0) (temp / 100f) else 0f)
                         }
                     }
                 }
 
-                // 2. Nút Boost (Giữ icon game)
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.size(180.dp)) {
                     val infiniteTransition = rememberInfiniteTransition(label = "radar")
                     val ringScale by infiniteTransition.animateFloat(0.9f, 1.1f, animationSpec = infiniteRepeatable(tween(2000, easing = LinearEasing), RepeatMode.Restart))
@@ -150,69 +126,63 @@ fun HomeScreen(
                     }
                 }
 
-                // 3. Bảng Toggles (Bỏ icon tiêu đề)
                 Column(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(20.dp)).background(C.Surface).padding(16.dp)) {
-                    Text("TÙY CHỈNH", color = C.TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp, maxLines = 1)
-                    Spacer(Modifier.height(12.dp))
-                    ToggleRowPremium("Tối ưu CPU/GPU", true)
-                    ToggleRowPremium("Giảm nhiệt độ", true)
-                    ToggleRowPremium("Tối ưu mạng", true)
-                    ToggleRowPremium("Khóa FPS", true)
+                    Text("TÙY CHỈNH", color = C.TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(8.dp))
+                    
+                    ToggleRowPremium(
+                        title = "Zero-Touch Auto", 
+                        isChecked = settings.autoBoost, 
+                        onToggle = { onUpdateSettings(settings.copy(autoBoost = it)) }
+                    )
+                    Divider(color = C.Border, modifier = Modifier.padding(vertical = 4.dp))
+                    if (isDownscaleSupported) {
+                        ToggleRowPremium(
+                            title = "Giảm đồ họa (Trong game)", 
+                            isChecked = settings.reduceGraphics, 
+                            onToggle = { onUpdateSettings(settings.copy(reduceGraphics = it)) }
+                        )
+                    }
+                    ToggleRowPremium(
+                        title = "Chống nóng máy", 
+                        isChecked = settings.thermalGuard, 
+                        onToggle = { onUpdateSettings(settings.copy(thermalGuard = it)) }
+                    )
                 }
             }
 
             Spacer(Modifier.height(16.dp))
 
-            // HÀNG 2: NÚT GIẢM ĐỒ HỌA (Bỏ icon, chỉ để text to rõ ràng)
-            if (isLienQuan || isRoblox) {
-                Row(Modifier.fillMaxWidth().height(70.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Box(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(16.dp)).background(C.Surface).border(1.dp, C.Gold.copy(alpha = 0.3f), RoundedCornerShape(16.dp)).clickable { onLaunchGame(selectedGamePkg) }, contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Giảm đồ họa 720p", color = C.Gold, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1)
-                            Text("Mượt hơn, hình ảnh nét vừa", color = C.TextSecondary, fontSize = 10.sp, maxLines = 1)
-                        }
-                    }
-                    
-                    Box(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(16.dp)).background(C.Surface).border(1.dp, C.Gold.copy(alpha = 0.3f), RoundedCornerShape(16.dp)).clickable { onLaunchGame(selectedGamePkg) }, contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Giảm đồ họa 540p", color = C.Gold, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1)
-                            Text("Siêu mượt cho máy yếu", color = C.TextSecondary, fontSize = 10.sp, maxLines = 1)
-                        }
-                    }
+            Row(Modifier.fillMaxWidth().height(100.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(16.dp)).background(C.Surface).padding(12.dp)) {
+                    Text("FPS REAL-TIME", color = C.TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(4.dp))
+                    LineChart(data = fpsHistory, maxData = 120f, color = C.Gold)
                 }
-                Spacer(Modifier.height(16.dp))
+                Column(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(16.dp)).background(C.Surface).padding(12.dp)) {
+                    Text("NHIỆT ĐỘ (°C)", color = C.TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(4.dp))
+                    LineChart(data = tempHistory, maxData = 80f, color = C.Red)
+                }
             }
 
-            // HÀNG 3: CHỌN GAME (Bỏ icon tiêu đề)
+            Spacer(Modifier.height(16.dp))
+
             Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(C.Surface).padding(16.dp)) {
-                Text("CHỌN GAME", color = C.TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-                Spacer(Modifier.height(12.dp))
+                Text("CHỌN GAME", color = C.TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(8.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(TweakDatabase.GAMES) { game ->
                         val isSelected = game.pkg == selectedGamePkg
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.clickable { selectedGamePkg = game.pkg }
-                        ) {
+                        Column(Modifier.clickable { selectedGamePkg = game.pkg }, horizontalAlignment = Alignment.CenterHorizontally) {
                             Box(
                                 Modifier.size(60.dp, 75.dp).clip(RoundedCornerShape(8.dp))
                                     .background(if (isSelected) C.Gold.copy(alpha = 0.15f) else C.BgDeep)
                                     .border(1.dp, if (isSelected) C.Gold else C.Border, RoundedCornerShape(8.dp)),
                                 contentAlignment = Alignment.Center
-                            ) {
-                                Text(game.emoji, fontSize = 28.sp)
-                            }
-                            Spacer(Modifier.height(6.dp))
-                            Text(
-                                text = game.name,
-                                color = if (isSelected) C.Gold else C.TextSecondary,
-                                fontSize = 10.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.width(64.dp)
-                            )
+                            ) { Text(game.emoji, fontSize = 28.sp) }
+                            Spacer(Modifier.height(4.dp))
+                            Text(game.name, color = if (isSelected) C.Gold else C.TextSecondary, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.width(64.dp), textAlign = TextAlign.Center)
                         }
                     }
                 }
@@ -222,18 +192,11 @@ fun HomeScreen(
     }
 }
 
-// ==========================================
-// COMPONENTS TỐI GIẢN
-// ==========================================
-
 @Composable
 fun SidebarItem(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, isSelected: Boolean, onClick: () -> Unit) {
     val bg = if (isSelected) Brush.horizontalGradient(listOf(C.Gold.copy(alpha = 0.15f), Color.Transparent)) else Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent))
     val tint = if (isSelected) C.Gold else C.TextSecondary
-    Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(bg).clickable { onClick() }.padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(bg).clickable { onClick() }.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(12.dp))
         Text(title, color = tint, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal, fontSize = 13.sp, maxLines = 1)
@@ -254,12 +217,13 @@ fun StatProgressRow(label: String, value: String, progress: Float) {
 }
 
 @Composable
-fun ToggleRowPremium(title: String, isChecked: Boolean) {
+fun ToggleRowPremium(title: String, isChecked: Boolean, onToggle: (Boolean) -> Unit) {
     Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
         Text(title, color = C.TextPrimary, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
         Switch(
-            checked = isChecked, onCheckedChange = {},
-            colors = SwitchDefaults.colors(checkedThumbColor = C.BgDeep, checkedTrackColor = C.Gold),
+            checked = isChecked, 
+            onCheckedChange = { onToggle(it) }, 
+            colors = SwitchDefaults.colors(checkedThumbColor = C.BgDeep, checkedTrackColor = C.Gold), 
             modifier = Modifier.scale(0.6f)
         )
     }
