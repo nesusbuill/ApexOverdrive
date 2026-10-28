@@ -25,7 +25,8 @@ object TweakDatabase {
         val isLienQuan = pkg == "com.garena.game.kgvn"
         val isRoblox = pkg == "com.roblox.client"
         
-        return listOf(
+        // 1. Danh sách tinh chỉnh cơ bản cho mọi game
+        val baseTweaks = listOf(
             Tweak("${pkg}_mode", "GAME MODE PERFORMANCE", "Ép xung hiệu năng cao",
                 "cmd game mode performance $pkg", "cmd game mode standard $pkg", TweakCategory.GAME),
             Tweak("${pkg}_120", "LOCK 120 FPS", "Khóa tần số quét 120Hz",
@@ -35,17 +36,25 @@ object TweakDatabase {
             Tweak("${pkg}_wl", "BATTERY WHITELIST", "Loại khỏi tối ưu pin",
                 "cmd deviceidle whitelist +$pkg", "cmd deviceidle whitelist -$pkg", TweakCategory.GAME),
             Tweak("${pkg}_keep", "KEEP IN RAM", "Giữ game trong RAM",
-                "am set-inactive $pkg false", null, TweakCategory.GAME),
-                
-            *if (isLienQuan || isRoblox) listOf(
+                "am set-inactive $pkg false", null, TweakCategory.GAME)
+        )
+        
+        // 2. Danh sách tinh chỉnh giảm đồ họa (chỉ dành cho Liên Quân và Roblox)
+        val downscaleTweaks = if (isLienQuan || isRoblox) {
+            listOf(
                 Tweak("${pkg}_720p", "GIẢM ĐỒ HỌA 720p", "Hạ độ phân giải, FPS mượt hơn",
                     "wm size 720x1280\nwm density 240", 
                     "wm size reset\nwm density reset", TweakCategory.DISPLAY, risky = true),
                 Tweak("${pkg}_540p", "GIẢM ĐỒ HỌA 540p (SIÊU MƯỢT)", "Dành cho máy yếu, đồ họa mờ",
                     "wm size 540x960\nwm density 160", 
                     "wm size reset\nwm density reset", TweakCategory.DISPLAY, risky = true)
-            ) else emptyList()
-        )
+            )
+        } else {
+            emptyList()
+        }
+
+        // 3. Nối 2 danh sách lại với nhau bằng dấu +
+        return baseTweaks + downscaleTweaks
     }
 
     val SYSTEM_TWEAKS = listOf(
