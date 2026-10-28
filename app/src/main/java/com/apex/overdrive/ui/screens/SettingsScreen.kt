@@ -95,11 +95,10 @@ fun SettingsScreen(
 private fun ToggleRowSwitch(label: String, checked: Boolean, onToggle: (Boolean) -> Unit) {
     Row(Modifier.fillMaxWidth().padding(vertical = 6.dp)
         .clip(RoundedCornerShape(10.dp))
-        .background(Brush.horizontalGradient(listOf(C.BgSurface, C.BgElevated)))
+        .background(Brush.horizontalGradient(colors = listOf(C.BgSurface, C.BgElevated)))
         .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically) {
-        Text(label, color = C.TextPrimary, fontSize = 12.sp,
-            modifier = Modifier.weight(1f))
+        Text(label, color = C.TextPrimary, fontSize = 12.sp, modifier = Modifier.weight(1f))
         GamingSwitch(checked, onToggle, C.Cyan)
     }
 }
