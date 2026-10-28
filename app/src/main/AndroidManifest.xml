@@ -9,7 +9,6 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
 
-    <!-- BẮT BUỘC: Khai báo các package game để app có thể mở chúng -->
     <queries>
         <package android:name="moe.shizuku.privileged.api" />
         <package android:name="com.garena.game.kgvn" />
